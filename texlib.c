@@ -22,4 +22,5 @@ void tex_draw_triangle(Vector2 a, Vector2 b, Vector2 c, TexMat *tex) {
   UploadMesh(&mesh, false);
   DrawMesh(mesh, m, MatrixIdentity());
   UnloadMesh(mesh);
+  UnloadMaterial(m);
 }

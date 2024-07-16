@@ -12,7 +12,6 @@ int main() {
     ClearBackground(BLACK);
     tex_draw_triangle((Vector2){0, 0}, (Vector2){500, 500}, (Vector2){0, 1000},
                       &test);
-    EndMode3D();
     EndDrawing();
   }
 }
