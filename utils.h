@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <wchar.h>
 #include <sys/time.h>
+
 /*
 	Initial Defines
 */
@@ -446,6 +447,9 @@ size_t HashString(String str){
 /*
 Utils
 */
+#ifdef __linux__
+int fileno(FILE * file);
+#endif
 long get_time_microseconds(){
 	struct timeval tv;
 	gettimeofday(&tv,NULL);
