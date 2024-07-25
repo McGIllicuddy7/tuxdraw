@@ -8,7 +8,7 @@ int main() {
   while (!WindowShouldClose()) {
     BeginDrawing();
     ClearBackground(BLACK);
-    tex_draw_triangle((Vector2){0, 0}, (Vector2){500, 500}, (Vector2){0, 1000},
+    tex_draw_quad((Vector2){200, 200}, (Vector2){800, 800}, (Vector2){200, 800},(Vector2){800,200},
                       &test);
     EndDrawing();
   }
