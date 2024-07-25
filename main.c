@@ -4,7 +4,7 @@
 #include <raylib.h>
 int main() {
   InitWindow(1000, 1000, "Hello Sailor");
-  TexMat test = create_blank_tex_mat();
+  TexMat test = tex_create_blank_mat();
   while (!WindowShouldClose()) {
     BeginDrawing();
     ClearBackground(BLACK);
