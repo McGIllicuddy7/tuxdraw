@@ -41,27 +41,27 @@ void tex_draw_quad_unchecked(Vector2 a, Vector2 b, Vector2 c,Vector2 d, TexMat *
   float w = GetScreenWidth();
   float h = GetScreenHeight();
   rlTexCoord2f(a.x/w, a.y/h);
-  rlColor4ub(255, 255, 255, 255);
+  rlColor4ub(255, 0, 0, 255);
   rlVertex2f(a.x, a.y);
 
   rlTexCoord2f(b.x/w, b.y/h);
-  //rlColor4ub(0, 255, 0, 255);
+  rlColor4ub(0, 255, 0, 255);
   rlVertex2f(b.x, b.y);
 
   rlTexCoord2f(c.x/w, c.y/h);
-  //rlColor4ub(0, 0, 255, 255);
+  rlColor4ub(0, 0, 255, 255);
   rlVertex2f(c.x, c.y);
 
   rlTexCoord2f(c.x/w, c.y/h);
-  //rlColor4ub(0, 0, 255, 255);
+  rlColor4ub(0, 0, 255, 255);
   rlVertex2f(c.x, c.y);
 
   rlTexCoord2f(d.x/w, d.y/h);
-  //rlColor4ub(0, 255, 0, 255);
+  rlColor4ub(0, 255, 0, 255);
   rlVertex2f(d.x, d.y);
     
   rlTexCoord2f(a.x/w, a.y/h);
-  //rlColor4ub(255, 0, 0, 255);
+  rlColor4ub(255, 0, 0, 255);
   rlVertex2f(a.x, a.y);
   rlEnd();
   EndShaderMode();
