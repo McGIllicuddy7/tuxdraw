@@ -8,7 +8,7 @@
 #include <assert.h>
 #include <wchar.h>
 #include <sys/time.h>
-
+#include <errno.h>
 /*
 	Initial Defines
 */
@@ -746,6 +746,10 @@ bool write_string_to_file(const char * s, const char * file_name){
 }
 String read_file_to_string(const char *file_name){
 	FILE *f= fopen(file_name, "rb");
+	if (!f){
+		perror("ERROR:");
+		exit(1);
+	}
 	fseek(f, 0, SEEK_END);
 	size_t fsize = ftell(f);
 	fseek(f, 0, SEEK_SET); 
