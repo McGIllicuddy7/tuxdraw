@@ -7,7 +7,7 @@ typedef struct {
 
 TexMat tex_create_blank_mat();
 TexMat tex_create_mat_from_program(const char * program);
-
+TexMat tex_create_mat_from_file(const char * file_path);
 void tex_free_mat(TexMat *mat);
 
 void tex_draw_triangle(Vector2 a, Vector2 b, Vector2 c, TexMat *tex);

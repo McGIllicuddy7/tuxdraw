@@ -10,16 +10,46 @@
 /*
  TexMat functions
  */
-TexMat tex_create_mat_from_program(const char * program){
-      return (TexMat){0};
+TexMat tex_create_mat_from_file(const char * file_path){
+  String s = read_file_to_string(file_path);
+  TexMat out = tex_create_mat_from_program(s.items);
+  destroy(s);
+  return out;
 }
-TexMat tex_create_blank_mat() {
-  String vs_code = read_file_to_string("shaders/base.vs");
-  String fs_code = read_file_to_string("shaders/base.fs");
-  Shader t =LoadShader("shaders/base.vs", "shaders/base.fs");
+
+TexMat tex_create_mat_from_program(const char * program){
+  String s = new_string(program);
+  const char * l = "main()";
+  int idx = -1;
+  bool findable = true;
+  for(int i =0; i<s.length(); i++){
+    bool found = true;  
+    for(int j = 0; j<11; j++){
+        if(j+i >=s.length(){
+            found = false;
+            findable = false;
+            break;
+        }
+        if(s.items[i+j] != l[j]){
+            found = false;
+        } 
+      }
+    if(found){
+      idx = i;
+      break;
+    }
+    if(!findable){
+      break;
+    }
+  }
+  if (idx == -1){
+    
+  }
+  return (TexMat){0};
+}
+TexMat tex_create_blank_mat() { 
+  Shader t =LoadShader("shaders/base_vertex.glsl", "shaders/base_frag.glsl");
   TexMat out = {t};
-  destroy(vs_code);
-  destroy(fs_code);
   return out;
 } 
 
