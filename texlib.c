@@ -38,17 +38,6 @@ const char * vertex_shader_code = "#version 330\n"
 "}";
 const char * frag_shader_code = 
 
-// Input vertex attributes (from vertex shader)
-"in vec2 fragTexCoord;"
-"in vec4 fragColor;"
-
-// Input uniform values
-"uniform sampler2D texture0;"
-"uniform vec4 colDiffuse;"
-
-// Output fragment color
-"out vec4 finalColor;"
-
 // NOTE: Add here your custom variables
 
 "void main()"
@@ -100,15 +89,25 @@ OptTexMat tex_create_mat_from_program(const char * program){
       return (OptTexMat){false};
   }
   insert(s, idx, '_');
-  String tmp = string_format("#version 330\n%s\nvoid main(){_main();}", s.items);
+  const char * vars =
+"in vec2 fragTexCoord;\n"
+"in vec4 fragColor;\n"
+
+// Input uniform values
+"uniform sampler2D texture0;\n"
+"uniform vec4 colDiffuse;\n"
+
+// Output fragment color
+"out vec4 finalColor;\n";
+  String tmp = string_format("#version 330\n%s\n%s\nvoid main(){_main();}",vars, s.items);
   printf("%s\n", tmp.items);
-  String circ_tmp = string_format("#version 330\nuniform vec2 location; uniform float rad_w; uniform float rad_h; %s\nvoid main(){float a = fragTexCoord.x-location.x; float b = fragTexCoord.y-location.y;if ((sqrt(a*a/(rad_w*rad_w)+b*b/(rad_h*rad_h)))>=1.0){discard;}_main();}", s.items);
+  String circ_tmp = string_format("#version 330\n%s\nuniform vec2 location; uniform float rad_w; uniform float rad_h; %s\nvoid main(){float a = fragTexCoord.x-location.x; float b = fragTexCoord.y-location.y;if ((sqrt(a*a/(rad_w*rad_w)+b*b/(rad_h*rad_h)))>=1.0){discard;}_main();}", vars,s.items);
   Shader base =  LoadShaderFromMemory(vertex_shader_code, tmp.items);
   Shader circle = LoadShaderFromMemory(vertex_shader_code, circ_tmp.items);
   destroy(tmp);
   destroy(s);
   destroy(circ_tmp);
-  return (OptTexMat){true,(TexMat){base, circle}};
+  return (OptTexMat){true,(TexMat){base, circle, GetShaderLocation(circle, "location"), GetShaderLocation(circle, "rad_w"),GetShaderLocation(circle, "rad_h")}};
 }
 TexMat tex_create_blank_mat() { 
   OptTexMat out = (tex_create_mat_from_program(frag_shader_code));
@@ -186,11 +185,11 @@ void tex_draw_circle(Vector2 location, float radius, TexMat * tex){
   float w = GetScreenWidth();
   float h = GetScreenHeight();
   Vector2 norm_location = (Vector2){location.x/w, location.y/h};
-  float norm_rad_y = location.y/(h);
-  float norm_rad_x = location.x/(w);
-  SetShaderValue(tex->oval_shader, GetShaderLocation(tex->oval_shader,"location"), &norm_location, SHADER_UNIFORM_VEC2);
-  SetShaderValue(tex->oval_shader, GetShaderLocation(tex->oval_shader,"rad_w"), &norm_rad_x, SHADER_UNIFORM_FLOAT);
-  SetShaderValue(tex->oval_shader, GetShaderLocation(tex->oval_shader,"rad_h"), &norm_rad_y, SHADER_UNIFORM_FLOAT);
+  float norm_rad_y = radius/(h);
+  float norm_rad_x = radius/(w);
+  SetShaderValue(tex->oval_shader, tex->circ_location_idx, &norm_location, SHADER_UNIFORM_VEC2);
+  SetShaderValue(tex->oval_shader, tex->circ_width_idx, &norm_rad_x, SHADER_UNIFORM_FLOAT);
+  SetShaderValue(tex->oval_shader, tex->circ_height_idx, &norm_rad_y, SHADER_UNIFORM_FLOAT);
   Quad tmp = make_valid_quad(
     (Vector2){location.x+radius, location.y+radius}, 
     (Vector2){location.x+radius, location.y-radius}, 

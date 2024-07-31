@@ -4,6 +4,9 @@
 typedef struct {
   Shader shader;
   Shader oval_shader;
+  int circ_location_idx;
+  int circ_width_idx;
+  int circ_height_idx;
 } TexMat;
 typedef struct{
   bool is_some;
