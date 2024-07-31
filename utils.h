@@ -97,9 +97,9 @@ void * memdup(void * ptr, size_t size);
     }
 
 #define insert(vec, idx, item)\
-    assert(idx<vec.length+1 && idx>=0)\
-    if(vec.length+1> vec.capacity){vec.items = arena_realloc(vec.arena,vec.items, vec.capacity,(vec.capacity+1)*sizeof(vec.items[0]); vec.capacity++;)}\
-    memove(&vec.items[idx+1], &vec.items[idx], (vec.capacity-idx)*sizeof(vec.items[0])); vec.items[idx] = item; vec.length ++;
+    assert(idx<vec.length+1 && idx>=0);\
+    if(vec.length+1> vec.capacity){vec.items = arena_realloc(vec.arena,vec.items, vec.capacity,(vec.capacity+1)*sizeof(vec.items[0]));vec.capacity++;}\
+    memmove(&vec.items[idx+1], &vec.items[idx], (vec.capacity-idx)*sizeof(vec.items[0])); vec.items[idx] = item; vec.length ++;
 #define resize(vec, len){\
 vec.length= len;\
 size_t previous_cap = vec.capacity;\

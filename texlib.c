@@ -7,25 +7,78 @@
 #include <stdio.h>
 #include "mathtils.h"
 #include "utils.h"
+#include <stdbool.h>
 /*
  TexMat functions
  */
-TexMat tex_create_mat_from_file(const char * file_path){
+const char * vertex_shader_code = "#version 330\n" 
+// Input vertex attributes
+"in vec3 vertexPosition;"
+"in vec2 vertexTexCoord;"
+"in vec3 vertexNormal;"
+"in vec4 vertexColor;"
+
+// Input uniform values
+"uniform mat4 mvp;"
+
+// Output vertex attributes (to fragment shader)
+"out vec2 fragTexCoord;"
+"out vec4 fragColor;"
+
+// NOTE: Add here your custom variables
+
+"void main()"
+"{"
+    // Send vertex attributes to fragment shader
+    "fragTexCoord = vertexTexCoord;"
+    "fragColor = vertexColor;"
+
+    // Calculate final vertex position
+    "gl_Position = mvp*vec4(vertexPosition, 1.0);"
+"}";
+const char * frag_shader_code = 
+
+// Input vertex attributes (from vertex shader)
+"in vec2 fragTexCoord;"
+"in vec4 fragColor;"
+
+// Input uniform values
+"uniform sampler2D texture0;"
+"uniform vec4 colDiffuse;"
+
+// Output fragment color
+"out vec4 finalColor;"
+
+// NOTE: Add here your custom variables
+
+"void main()"
+"{"
+    // Texel color fetching from texture sampler
+    "vec4 texelColor = texture(texture0, fragTexCoord);"
+
+    // NOTE: Implement here your fragment shader code
+
+    "finalColor.r = fragColor.r;"
+    "finalColor.g = fragColor.g; "
+    "finalColor.b = fragColor.b;"
+    "finalColor.a = fragColor.a;"
+"}";
+OptTexMat tex_create_mat_from_file(const char * file_path){
   String s = read_file_to_string(file_path);
-  TexMat out = tex_create_mat_from_program(s.items);
+OptTexMat out =tex_create_mat_from_program(s.items);
   destroy(s);
   return out;
 }
 
-TexMat tex_create_mat_from_program(const char * program){
+OptTexMat tex_create_mat_from_program(const char * program){
   String s = new_string(program);
   const char * l = "main()";
   int idx = -1;
   bool findable = true;
-  for(int i =0; i<s.length(); i++){
+  for(int i =0; i<s.length; i++){
     bool found = true;  
-    for(int j = 0; j<11; j++){
-        if(j+i >=s.length(){
+    for(int j = 0; j<6; j++){
+        if(j+i >=s.length){
             found = false;
             findable = false;
             break;
@@ -43,14 +96,24 @@ TexMat tex_create_mat_from_program(const char * program){
     }
   }
   if (idx == -1){
-    
+      destroy(s);
+      return (OptTexMat){false};
   }
-  return (TexMat){0};
+  insert(s, idx, '_');
+  String tmp = string_format("#version 330\n%s\nvoid main(){_main();}", s.items);
+  printf("%s\n", tmp.items);
+  String circ_tmp = string_format("#version 330\nuniform vec2 location; uniform float rad_w; uniform float rad_h; %s\nvoid main(){float a = fragTexCoord.x-location.x; float b = fragTexCoord.y-location.y;if ((sqrt(a*a/(rad_w*rad_w)+b*b/(rad_h*rad_h)))>=1.0){discard;}_main();}", s.items);
+  Shader base =  LoadShaderFromMemory(vertex_shader_code, tmp.items);
+  Shader circle = LoadShaderFromMemory(vertex_shader_code, circ_tmp.items);
+  destroy(tmp);
+  destroy(s);
+  destroy(circ_tmp);
+  return (OptTexMat){true,(TexMat){base, circle}};
 }
 TexMat tex_create_blank_mat() { 
-  Shader t =LoadShader("shaders/base_vertex.glsl", "shaders/base_frag.glsl");
-  TexMat out = {t};
-  return out;
+  OptTexMat out = (tex_create_mat_from_program(frag_shader_code));
+  assert(out.is_some);
+  return out.value;
 } 
 
 /*
@@ -98,6 +161,7 @@ void tex_draw_quad_unchecked(Vector2 a, Vector2 b, Vector2 c,Vector2 d, TexMat *
 }
 
 void tex_draw_triangle_unchecked(Vector2 a, Vector2 b, Vector2 c, TexMat *tex) {
+  BeginShaderMode(tex->shader);
   rlBegin(RL_TRIANGLES);
   float w = GetScreenWidth();
   float h = GetScreenHeight();
@@ -113,5 +177,52 @@ void tex_draw_triangle_unchecked(Vector2 a, Vector2 b, Vector2 c, TexMat *tex) {
   rlColor4ub(0, 0, 255, 255);
   rlVertex2f(c.x, c.y);
   rlEnd();
+  EndShaderMode();
 }
 
+void tex_draw_circle(Vector2 location, float radius, TexMat * tex){
+  BeginShaderMode(tex->oval_shader);
+  rlBegin(RL_TRIANGLES);
+  float w = GetScreenWidth();
+  float h = GetScreenHeight();
+  Vector2 norm_location = (Vector2){location.x/w, location.y/h};
+  float norm_rad_y = location.y/(h);
+  float norm_rad_x = location.x/(w);
+  SetShaderValue(tex->oval_shader, GetShaderLocation(tex->oval_shader,"location"), &norm_location, SHADER_UNIFORM_VEC2);
+  SetShaderValue(tex->oval_shader, GetShaderLocation(tex->oval_shader,"rad_w"), &norm_rad_x, SHADER_UNIFORM_FLOAT);
+  SetShaderValue(tex->oval_shader, GetShaderLocation(tex->oval_shader,"rad_h"), &norm_rad_y, SHADER_UNIFORM_FLOAT);
+  Quad tmp = make_valid_quad(
+    (Vector2){location.x+radius, location.y+radius}, 
+    (Vector2){location.x+radius, location.y-radius}, 
+    (Vector2){location.x-radius, location.y+radius},
+    (Vector2){location.x-radius, location.y-radius});
+  Vector2 a = tmp.points[0];
+  Vector2 b = tmp.points[1];
+  Vector2 c = tmp.points[2];
+  Vector2 d = tmp.points[3];
+  rlTexCoord2f(a.x/w, a.y/h);
+  rlColor4ub(255, 0, 0, 255);
+  rlVertex2f(a.x, a.y);
+
+  rlTexCoord2f(b.x/w, b.y/h);
+  rlColor4ub(0, 255, 0, 255);
+  rlVertex2f(b.x, b.y);
+
+  rlTexCoord2f(c.x/w, c.y/h);
+  rlColor4ub(0, 0, 255, 255);
+  rlVertex2f(c.x, c.y);
+
+  rlTexCoord2f(c.x/w, c.y/h);
+  rlColor4ub(0, 0, 255, 255);
+  rlVertex2f(c.x, c.y);
+
+  rlTexCoord2f(d.x/w, d.y/h);
+  rlColor4ub(0, 255, 0, 255);
+  rlVertex2f(d.x, d.y);
+    
+  rlTexCoord2f(a.x/w, a.y/h);
+  rlColor4ub(255, 0, 0, 255);
+  rlVertex2f(a.x, a.y);
+  rlEnd();
+  EndShaderMode();
+}
