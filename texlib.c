@@ -101,7 +101,7 @@ OptTexMat tex_create_mat_from_program(const char * program){
 "out vec4 finalColor;\n";
   String tmp = string_format("#version 330\n%s\n%s\nvoid main(){_main();}",vars, s.items);
   printf("%s\n", tmp.items);
-  String circ_tmp = string_format("#version 330\n%s\nuniform vec2 location; uniform float rad_w; uniform float rad_h; %s\nvoid main(){float a = fragTexCoord.x-location.x; float b = fragTexCoord.y-location.y;if ((sqrt(a*a/(rad_w*rad_w)+b*b/(rad_h*rad_h)))>=1.0){discard;}_main();}", vars,s.items);
+  String circ_tmp = string_format("#version 330\n%s\nuniform vec2 location; uniform float rad_w; uniform float rad_h; %s\nvoid main(){float a = fragTexCoord.x-location.x; float b = fragTexCoord.y-location.y;if ((sqrt(a*a/(rad_w*rad_w)+b*b/(rad_h*rad_h)))>=1.0){finalColor.a = 0; return;}_main();}", vars,s.items);
   Shader base =  LoadShaderFromMemory(vertex_shader_code, tmp.items);
   Shader circle = LoadShaderFromMemory(vertex_shader_code, circ_tmp.items);
   destroy(tmp);
