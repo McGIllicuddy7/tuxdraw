@@ -8,6 +8,7 @@ int main() {
   assert(testOpt.is_some);
   TexMat test = testOpt.value;
   float scale = 50.0;
+  float speed = 256.0;
   Vector2 location = {500,500};
   while (!WindowShouldClose()) {
     if(IsKeyDown(KEY_SPACE)){
@@ -22,10 +23,10 @@ int main() {
       scale = 0;
     }
     if(IsKeyDown(KEY_W)){
-      location.y-=GetFrameTime()*100;
+      location.y-=GetFrameTime()*speed;
     }
     if(IsKeyDown(KEY_S)){
-      location.y +=GetFrameTime()*100;
+      location.y +=GetFrameTime()*speed;
     }
     if(location.y>1000){
       location.y = 1000;
@@ -34,10 +35,10 @@ int main() {
       location.y = 0;
     }
     if(IsKeyDown(KEY_A)){
-      location.x-=GetFrameTime()*100;
+      location.x-=GetFrameTime()*speed;
     }
     if(IsKeyDown(KEY_D)){
-      location.x += GetFrameTime()*100;
+      location.x += GetFrameTime()*speed;
     }
     if(location.x>1000){
       location.x = 1000;
