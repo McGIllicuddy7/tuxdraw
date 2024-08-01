@@ -36,7 +36,17 @@ const char * vertex_shader_code = "#version 330\n"
     // Calculate final vertex position
     "gl_Position = mvp*vec4(vertexPosition, 1.0);"
 "}";
-const char * frag_shader_code = 
+const char * frag_shader_code = "#version 330\n"
+  "in vec2 fragTexCoord;\n"
+"in vec4 fragColor;\n"
+
+// Input uniform values
+"uniform sampler2D texture0;\n"
+"uniform vec4 colDiffuse;\n"
+
+// Output fragment color
+"out vec4 finalColor;\n"
+
 
 // NOTE: Add here your custom variables
 
@@ -52,45 +62,9 @@ const char * frag_shader_code =
     "finalColor.b = fragColor.b;"
     "finalColor.a = fragColor.a;"
 "}";
-OptTexMat tex_create_mat_from_file(const char * file_path){
-  String s = read_file_to_string(file_path);
-OptTexMat out =tex_create_mat_from_program(s.items);
-  destroy(s);
-  return out;
-}
-
-OptTexMat tex_create_mat_from_program(const char * program){
-  String s = new_string(program);
-  const char * l = "main()";
-  int idx = -1;
-  bool findable = true;
-  for(int i =0; i<s.length; i++){
-    bool found = true;  
-    for(int j = 0; j<6; j++){
-        if(j+i >=s.length){
-            found = false;
-            findable = false;
-            break;
-        }
-        if(s.items[i+j] != l[j]){
-            found = false;
-        } 
-      }
-    if(found){
-      idx = i;
-      break;
-    }
-    if(!findable){
-      break;
-    }
-  }
-  if (idx == -1){
-      destroy(s);
-      return (OptTexMat){false};
-  }
-  insert(s, idx, '_');
-  const char * vars =
-"in vec2 fragTexCoord;\n"
+bool shaders_initialized = false;
+const char * base_shader_code = "#version 330\n"
+  "in vec2 fragTexCoord;\n"
 "in vec4 fragColor;\n"
 
 // Input uniform values
@@ -98,17 +72,97 @@ OptTexMat tex_create_mat_from_program(const char * program){
 "uniform vec4 colDiffuse;\n"
 
 // Output fragment color
-"out vec4 finalColor;\n";
-  String tmp = string_format("#version 330\n%s\n%s\nvoid main(){_main();}",vars, s.items);
-  printf("%s\n", tmp.items);
-  String circ_tmp = string_format("#version 330\n%s\nuniform vec2 location; uniform float rad_w; uniform float rad_h; %s\nvoid main(){float a = fragTexCoord.x-location.x; float b = fragTexCoord.y-location.y;if ((sqrt(a*a/(rad_w*rad_w)+b*b/(rad_h*rad_h)))>=1.0){finalColor.a = 0; return;}_main();}", vars,s.items);
-  Shader base =  LoadShaderFromMemory(vertex_shader_code, tmp.items);
-  Shader circle = LoadShaderFromMemory(vertex_shader_code, circ_tmp.items);
-  destroy(tmp);
+"out vec4 finalColor;\n"
+"void main(){"
+    "vec4 texelColor = texture(texture0, fragTexCoord);"
+
+    // NOTE: Implement here your fragment shader code
+
+    "finalColor.r = texelColor.r;"
+    "finalColor.g = texelColor.g; "
+    "finalColor.b = texelColor.b;"
+    "finalColor.a = texelColor.a;"
+  "}"
+;
+static char * oval_shader_code =  "#version 330\n"
+  "in vec2 fragTexCoord;\n"
+"in vec4 fragColor;\n"
+
+// Input uniform values
+"uniform sampler2D texture0;\n"
+"uniform vec4 colDiffuse;\n"
+
+// Output fragment color
+"out vec4 finalColor;\n"
+"uniform vec2 location; uniform float rad_w; uniform float rad_h; void main(){float a = fragTexCoord.x-location.x; float b = fragTexCoord.y-location.y;if ((sqrt(a*a/(rad_w*rad_w)+b*b/(rad_h*rad_h)))>=1.0){finalColor.a = 0; return;}"    "vec4 texelColor = texture(texture0, fragTexCoord);"
+
+    // NOTE: Implement here your fragment shader code
+
+    "finalColor.r = texelColor.r;"
+    "finalColor.g = texelColor.g;"
+    "finalColor.b = texelColor.b;"
+    "finalColor.a = texelColor.a;"
+"}";
+static Shader base_shader = {0};
+static Shader oval_shader = {0};
+static int circ_location_idx = 0;
+static int circ_width_idx =0;
+static int circ_height_idx = 0;
+OptTexMat tex_create_mat_from_file(const char * file_path){
+  String s = read_file_to_string(file_path);
+OptTexMat out =tex_create_mat_from_program(s.items);
   destroy(s);
-  destroy(circ_tmp);
-  return (OptTexMat){true,(TexMat){base, circle, GetShaderLocation(circle, "location"), GetShaderLocation(circle, "rad_w"),GetShaderLocation(circle, "rad_h")}};
+  return out;
 }
+
+void draw_quad_unchecked(Vector2 a, Vector2 b, Vector2 c,Vector2 d, Shader shade){
+  BeginShaderMode(shade);
+  rlBegin(RL_QUADS);
+  float w = GetScreenWidth();
+  float h = GetScreenHeight();
+  rlTexCoord2f(a.x/w, a.y/h);
+  rlColor4ub(255, 0, 0, 255);
+  rlVertex2f(a.x, a.y);
+
+  rlTexCoord2f(b.x/w, b.y/h);
+  rlColor4ub(0, 255, 0, 255);
+  rlVertex2f(b.x, b.y);
+
+
+  rlTexCoord2f(c.x/w, c.y/h);
+  rlColor4ub(0, 0, 255, 255);
+  rlVertex2f(c.x, c.y);
+
+  rlTexCoord2f(d.x/w, d.y/h);
+  rlColor4ub(0, 255, 0, 255);
+  rlVertex2f(d.x, d.y);
+  rlEnd();
+  EndShaderMode();
+}
+
+void draw_quad(Vector2 a, Vector2 b, Vector2 c, Vector2 d, Shader shade){
+  Quad q = make_valid_quad(a,b,c,d);
+  draw_quad_unchecked(q.points[0], q.points[1], q.points[2], q.points[3], shade);
+}
+
+OptTexMat tex_create_mat_from_program(const char * program){
+  if(!shaders_initialized){
+    base_shader = LoadShaderFromMemory(vertex_shader_code, base_shader_code);
+    oval_shader = LoadShaderFromMemory(vertex_shader_code, oval_shader_code);
+    circ_location_idx = GetShaderLocation(oval_shader, "location");
+    circ_width_idx =  GetShaderLocation(oval_shader, "rad_w");
+    circ_height_idx = GetShaderLocation(oval_shader, "rad_h");
+    shaders_initialized = true;
+  }
+  Shader shade = LoadShaderFromMemory(vertex_shader_code, program);
+  RenderTexture outtex = LoadRenderTexture(GetScreenWidth(), GetScreenHeight()); 
+  BeginTextureMode(outtex);
+  draw_quad((Vector2){0,0}, (Vector2){0,GetScreenHeight()}, (Vector2){GetScreenWidth(), 0}, (Vector2){GetScreenWidth(), GetScreenHeight()}, shade);
+  EndTextureMode();
+  UnloadShader(shade);
+  return (OptTexMat){true,outtex};
+}
+
 TexMat tex_create_blank_mat() { 
   OptTexMat out = (tex_create_mat_from_program(frag_shader_code));
   assert(out.is_some);
@@ -128,10 +182,12 @@ void tex_draw_quad(Vector2 a, Vector2 b, Vector2 c, Vector2 d, TexMat * tex){
 }
 
 void tex_draw_quad_unchecked(Vector2 a, Vector2 b, Vector2 c,Vector2 d, TexMat * tex){
-  BeginShaderMode(tex->shader);
-  rlBegin(RL_TRIANGLES);
+  rlBegin(RL_QUADS);
+  BeginShaderMode(base_shader);
+  rlSetTexture(tex->tex.texture.id);
   float w = GetScreenWidth();
   float h = GetScreenHeight();
+
   rlTexCoord2f(a.x/w, a.y/h);
   rlColor4ub(255, 0, 0, 255);
   rlVertex2f(a.x, a.y);
@@ -140,9 +196,7 @@ void tex_draw_quad_unchecked(Vector2 a, Vector2 b, Vector2 c,Vector2 d, TexMat *
   rlColor4ub(0, 255, 0, 255);
   rlVertex2f(b.x, b.y);
 
-  rlTexCoord2f(c.x/w, c.y/h);
-  rlColor4ub(0, 0, 255, 255);
-  rlVertex2f(c.x, c.y);
+
 
   rlTexCoord2f(c.x/w, c.y/h);
   rlColor4ub(0, 0, 255, 255);
@@ -152,16 +206,15 @@ void tex_draw_quad_unchecked(Vector2 a, Vector2 b, Vector2 c,Vector2 d, TexMat *
   rlColor4ub(0, 255, 0, 255);
   rlVertex2f(d.x, d.y);
     
-  rlTexCoord2f(a.x/w, a.y/h);
-  rlColor4ub(255, 0, 0, 255);
-  rlVertex2f(a.x, a.y);
-  rlEnd();
   EndShaderMode();
+
+  rlEnd();
 }
 
 void tex_draw_triangle_unchecked(Vector2 a, Vector2 b, Vector2 c, TexMat *tex) {
-  BeginShaderMode(tex->shader);
   rlBegin(RL_TRIANGLES);
+  BeginShaderMode(base_shader);
+  rlSetTexture(tex->tex.texture.id);
   float w = GetScreenWidth();
   float h = GetScreenHeight();
   rlTexCoord2f(a.x/w, a.y/h);
@@ -175,21 +228,22 @@ void tex_draw_triangle_unchecked(Vector2 a, Vector2 b, Vector2 c, TexMat *tex) {
   rlTexCoord2f(c.x/w, c.y/h);
   rlColor4ub(0, 0, 255, 255);
   rlVertex2f(c.x, c.y);
-  rlEnd();
   EndShaderMode();
+  rlEnd();
 }
 
 void tex_draw_circle(Vector2 location, float radius, TexMat * tex){
-  BeginShaderMode(tex->oval_shader);
-  rlBegin(RL_TRIANGLES);
+  rlBegin(RL_QUADS);
+  BeginShaderMode(oval_shader);
+  rlSetTexture(tex->tex.texture.id);
   float w = GetScreenWidth();
   float h = GetScreenHeight();
   Vector2 norm_location = (Vector2){location.x/w, location.y/h};
   float norm_rad_y = radius/(h);
   float norm_rad_x = radius/(w);
-  SetShaderValue(tex->oval_shader, tex->circ_location_idx, &norm_location, SHADER_UNIFORM_VEC2);
-  SetShaderValue(tex->oval_shader, tex->circ_width_idx, &norm_rad_x, SHADER_UNIFORM_FLOAT);
-  SetShaderValue(tex->oval_shader, tex->circ_height_idx, &norm_rad_y, SHADER_UNIFORM_FLOAT);
+  SetShaderValue(oval_shader, circ_location_idx, &norm_location, SHADER_UNIFORM_VEC2);
+  SetShaderValue(oval_shader, circ_width_idx, &norm_rad_x, SHADER_UNIFORM_FLOAT);
+  SetShaderValue(oval_shader, circ_height_idx, &norm_rad_y, SHADER_UNIFORM_FLOAT);
   Quad tmp = make_valid_quad(
     (Vector2){location.x+radius, location.y+radius}, 
     (Vector2){location.x+radius, location.y-radius}, 
@@ -211,17 +265,11 @@ void tex_draw_circle(Vector2 location, float radius, TexMat * tex){
   rlColor4ub(0, 0, 255, 255);
   rlVertex2f(c.x, c.y);
 
-  rlTexCoord2f(c.x/w, c.y/h);
-  rlColor4ub(0, 0, 255, 255);
-  rlVertex2f(c.x, c.y);
 
   rlTexCoord2f(d.x/w, d.y/h);
   rlColor4ub(0, 255, 0, 255);
   rlVertex2f(d.x, d.y);
-    
-  rlTexCoord2f(a.x/w, a.y/h);
-  rlColor4ub(255, 0, 0, 255);
-  rlVertex2f(a.x, a.y);
-  rlEnd();
   EndShaderMode();
+  rlEnd();
 }
+

@@ -1,3 +1,13 @@
+#version 330
+in vec2 fragTexCoord;
+in vec4 fragColor;
+
+// Input uniform values
+uniform sampler2D texture0;
+uniform vec4 colDiffuse;
+
+// Output fragment color
+out vec4 finalColor;
 float noise(vec2 location){
 	float tout = (noise1(location)+0.6)/1.2;
 	if(tout>1.0){
