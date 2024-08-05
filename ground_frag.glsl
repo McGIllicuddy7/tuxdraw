@@ -90,14 +90,17 @@ void main(){
 	ns.v1 = v1*13;
 	ns.v2 = v2*17;
 	scl = 32;
-	float mlt=((noise(ns,fragTexCoord*16*scl)/4.0+noise(ns,fragTexCoord*8*scl)/4.0)+noise(ns,fragTexCoord*4*scl)/4.0*2.0)*0.5 +0.55;
-	if(v>0.2){
-		finalColor.g = 0.4*mlt;
-	} else if(v>0.05){
-		finalColor.g = 0.3*mlt;
-	} else{
-		finalColor.r = 0.2*mlt;
+	float mlt=((noise(ns,fragTexCoord*16*scl)/4.0+noise(ns,fragTexCoord*8*scl)/4.0)+noise(ns,fragTexCoord*4*scl)/4.0*2.0)*0.2 +0.8;
+	if(v>0.4){
+		finalColor.g = 0.25*mlt;
+	} else if(v>0.2){
 		finalColor.g = 0.2*mlt;
+	} else if (v>0.1){
+		finalColor.r = 0.18*mlt;
+		finalColor.g = 0.18*mlt;
+	} else{
+		finalColor.r = 0.15*mlt;
+		finalColor.g = 0.15*mlt;
 	}
 
 }
