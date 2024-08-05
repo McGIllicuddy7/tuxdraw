@@ -51,6 +51,7 @@ int main() {
     ClearBackground(BLACK);
     //tex_draw_quad((Vector2){200, 200}, (Vector2){800, 800}, (Vector2){200, 800},(Vector2){800,200},&test);
     tex_draw_circle(location,scale, &test );
+    tex_draw_line((Vector2){0,0}, (Vector2){1000,1000},100.0, &test);
     //DrawTexture(test.tex.texture,0,0, WHITE);
     DrawFPS(950, 950);
     EndDrawing();

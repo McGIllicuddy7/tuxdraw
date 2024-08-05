@@ -273,3 +273,14 @@ void tex_draw_circle(Vector2 location, float radius, TexMat * tex){
   rlEnd();
 }
 
+void tex_draw_line(Vector2 start, Vector2 end, float width, TexMat * tex){
+  if(Vector2Distance(start,end)<0.01){
+    return;
+  }
+  Vector2 delta = Vector2Scale(Vector2Rotate(Vector2Normalize(Vector2Subtract(end,start)), PI/2), width);
+  Vector2 a = Vector2Add(start,delta);
+  Vector2 b = Vector2Subtract(start,delta);
+  Vector2 c = Vector2Add(end,delta);
+  Vector2 d = Vector2Subtract(end,delta);
+  tex_draw_quad(a,b,c,d,tex);
+}

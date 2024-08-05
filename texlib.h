@@ -25,3 +25,5 @@ void tex_draw_quad(Vector2 a, Vector2 b, Vector2 c, Vector2 d, TexMat * tex);
 void tex_draw_quad_unchecked(Vector2 a, Vector2 b, Vector2 c,Vector2 d, TexMat * tex);
 
 void tex_draw_circle(Vector2 location, float radius, TexMat * tex);
+
+void tex_draw_line(Vector2 start, Vector2 end, float width, TexMat * tex);
