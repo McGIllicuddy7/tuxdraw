@@ -10,6 +10,7 @@ int main() {
   float scale = 50.0;
   float speed = 256.0;
   Vector2 location = {500,500};
+  SetTargetFPS(60); 
   while (!WindowShouldClose()) {
     if(IsKeyDown(KEY_SPACE)){
       scale += GetFrameTime()*50;
